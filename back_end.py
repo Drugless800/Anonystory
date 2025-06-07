@@ -238,6 +238,7 @@ def get_featured_story():
     return jsonify(scored[0])
 
 # Run the app in debug mode (auto reloads on code changes)
-port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
 
