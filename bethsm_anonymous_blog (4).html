@@ -84,11 +84,11 @@
   </style>
 </head>
 <body>
-  <div class="toggle-mode" onclick="toggleMode()">Toggle Mode</div>
+  <div class="toggle-mode" onclick="toggleMode()">Mode</div>
   <div class="container">
-    <h2>Behind The Smile 🫥</h2>
+    <h2>Behind The Smile By Drugless</h2>
     <textarea id="content" placeholder="Type your story..." oninput="updateCharCount()"></textarea>
-    <div class="char-count"><span id="charCount">0</span>/500 characters</div>
+    <div class="char-count"><span id="charCount">0</span>/5000 characters</div>
     <input type="text" id="nickname" placeholder="Optional nickname..." />
     <select id="mood">
       <option value="🫥 Untagged">🫥 Untagged</option>
@@ -96,14 +96,14 @@
       <option value="😡 Angry">😡 Angry</option>
       <option value="😊 Happy">😊 Happy</option>
     </select>
-    <label><input type="checkbox" id="sensitive" /> Mark as sensitive</label>
+    <label><input type="checkbox" id="sensitive" /> Blur</label>
     <button onclick="postStory()">Post</button>
     <div id="featured"></div>
     <div id="stories"></div>
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:5000';
+    const API_BASE = 'https://anonystory-2.onrender.com';
     let isLight = false;
 
     function toggleMode() {
@@ -129,8 +129,8 @@
       const mood = document.getElementById('mood').value;
       const sensitive = document.getElementById('sensitive').checked;
 
-      if (content.length > 500) {
-        alert('Story exceeds 500 characters. Please shorten it.');
+      if (content.length > 5000) {
+        alert('Story exceeds 5000 characters. are you writing a flippin essay?, there is no reward here shorten the fucken thing');
         return;
       }
 
