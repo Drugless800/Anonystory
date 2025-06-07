@@ -76,13 +76,19 @@
       font-weight: bold;
       cursor: pointer;
     }
+    .char-count {
+      text-align: right;
+      font-size: 0.85rem;
+      color: #bbb;
+    }
   </style>
 </head>
 <body>
   <div class="toggle-mode" onclick="toggleMode()">Toggle Mode</div>
   <div class="container">
     <h2>Behind The Smile 🫥</h2>
-    <textarea id="content" placeholder="Type your story..."></textarea>
+    <textarea id="content" placeholder="Type your story..." oninput="updateCharCount()"></textarea>
+    <div class="char-count"><span id="charCount">0</span>/500 characters</div>
     <input type="text" id="nickname" placeholder="Optional nickname..." />
     <select id="mood">
       <option value="🫥 Untagged">🫥 Untagged</option>
@@ -97,6 +103,7 @@
   </div>
 
   <script>
+    const API_BASE = 'http://localhost:5000';
     let isLight = false;
 
     function toggleMode() {
@@ -104,8 +111,14 @@
       isLight = !isLight;
     }
 
+    function updateCharCount() {
+      const content = document.getElementById('content');
+      const charCount = document.getElementById('charCount');
+      charCount.textContent = content.value.length;
+    }
+
     async function fetchStories() {
-      const res = await fetch('http://localhost:5000/stories');
+      const res = await fetch(`${API_BASE}/stories`);
       const stories = await res.json();
       renderStories(stories);
     }
@@ -116,16 +129,23 @@
       const mood = document.getElementById('mood').value;
       const sensitive = document.getElementById('sensitive').checked;
 
-      await fetch('http://localhost:5000/stories', {
+      if (content.length > 500) {
+        alert('Story exceeds 500 characters. Please shorten it.');
+        return;
+      }
+
+      await fetch(`${API_BASE}/stories`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ content, nickname, mood, sensitive })
       });
       fetchStories();
+      document.getElementById('content').value = '';
+      updateCharCount();
     }
 
     async function react(storyId, index, emoji) {
-      await fetch(`http://localhost:5000/stories/${storyId}/comments/${index}/react`, {
+      await fetch(`${API_BASE}/stories/${storyId}/comments/${index}/react`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ emoji })
@@ -133,9 +153,9 @@
       fetchStories();
     }
 
-    async function comment(storyId, index) {
+    async function comment(storyId) {
       const text = document.getElementById(`c-${storyId}`).value;
-      await fetch(`http://localhost:5000/stories/${storyId}/comments`, {
+      await fetch(`${API_BASE}/stories/${storyId}/comments`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ comment: text })
@@ -144,14 +164,14 @@
     }
 
     async function upvote(storyId) {
-      await fetch(`http://localhost:5000/stories/${storyId}/upvote`, {
+      await fetch(`${API_BASE}/stories/${storyId}/upvote`, {
         method: 'POST'
       });
       fetchStories();
     }
 
     async function getFeatured() {
-      const res = await fetch('http://localhost:5000/featured');
+      const res = await fetch(`${API_BASE}/featured`);
       const story = await res.json();
       if (!story.id) return;
       document.getElementById('featured').innerHTML = renderStory(story, true);
