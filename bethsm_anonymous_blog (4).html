@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BeThSm - Behind The Smile</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    :root {
+      --bg: #121212;
+      --text: #ffffff;
+    }
+    .light-mode {
+      --bg: #f7f7f7;
+      --text: #111111;
+      background-image: url('https://emojicdn.elk.sh/☁️');
+      background-repeat: no-repeat;
+      background-position: top right;
+      background-size: 120px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    textarea, input, button, select {
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+    }
+    button {
+      cursor: pointer;
+      background-color: #6c5ce7;
+      color: white;
+      font-weight: bold;
+    }
+    .story {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 10px;
+    }
+    .blur {
+      filter: blur(5px);
+    }
+    .comment-box {
+      margin-top: 0.5rem;
+    }
+    .reaction-button {
+      font-size: 1.2rem;
+      margin-right: 0.5rem;
+      cursor: pointer;
+    }
+    .featured {
+      border: 2px solid gold;
+      background: rgba(255, 255, 0, 0.1);
+    }
+    .toggle-mode {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      background-color: #ccc;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="toggle-mode" onclick="toggleMode()">Toggle Mode</div>
+  <div class="container">
+    <h2>Behind The Smile 🫥</h2>
+    <textarea id="content" placeholder="Type your story..."></textarea>
+    <input type="text" id="nickname" placeholder="Optional nickname..." />
+    <select id="mood">
+      <option value="🫥 Untagged">🫥 Untagged</option>
+      <option value="😔 Sad">😔 Sad</option>
+      <option value="😡 Angry">😡 Angry</option>
+      <option value="😊 Happy">😊 Happy</option>
+    </select>
+    <label><input type="checkbox" id="sensitive" /> Mark as sensitive</label>
+    <button onclick="postStory()">Post</button>
+    <div id="featured"></div>
+    <div id="stories"></div>
+  </div>
+
+  <script>
+    let isLight = false;
+
+    function toggleMode() {
+      document.body.classList.toggle('light-mode');
+      isLight = !isLight;
+    }
+
+    async function fetchStories() {
+      const res = await fetch('http://localhost:5000/stories');
+      const stories = await res.json();
+      renderStories(stories);
+    }
+
+    async function postStory() {
+      const content = document.getElementById('content').value;
+      const nickname = document.getElementById('nickname').value;
+      const mood = document.getElementById('mood').value;
+      const sensitive = document.getElementById('sensitive').checked;
+
+      await fetch('http://localhost:5000/stories', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ content, nickname, mood, sensitive })
+      });
+      fetchStories();
+    }
+
+    async function react(storyId, index, emoji) {
+      await fetch(`http://localhost:5000/stories/${storyId}/comments/${index}/react`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ emoji })
+      });
+      fetchStories();
+    }
+
+    async function comment(storyId, index) {
+      const text = document.getElementById(`c-${storyId}`).value;
+      await fetch(`http://localhost:5000/stories/${storyId}/comments`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ comment: text })
+      });
+      fetchStories();
+    }
+
+    async function upvote(storyId) {
+      await fetch(`http://localhost:5000/stories/${storyId}/upvote`, {
+        method: 'POST'
+      });
+      fetchStories();
+    }
+
+    async function getFeatured() {
+      const res = await fetch('http://localhost:5000/featured');
+      const story = await res.json();
+      if (!story.id) return;
+      document.getElementById('featured').innerHTML = renderStory(story, true);
+    }
+
+    function renderStories(stories) {
+      const container = document.getElementById('stories');
+      container.innerHTML = stories.map(s => renderStory(s)).join('');
+    }
+
+    function renderStory(s, featured = false) {
+      let blurClass = s.sensitive ? 'blur' : '';
+      let viewBtn = s.sensitive ? `<button onclick="this.previousElementSibling.classList.remove('blur'); this.remove();">View Anyway</button>` : '';
+      return `
+      <div class="story ${featured ? 'featured' : ''}">
+        <strong>${s.nickname}</strong> · ${s.timestamp} · ${s.mood}<br />
+        <div class="${blurClass}">${s.content}</div>
+        ${viewBtn}<br />
+        <button onclick="upvote('${s.id}')">👍 ${s.upvotes}</button>
+        <div>
+          ${s.comments.map((c, i) => `
+            <div class="comment-box">
+              🗨️ ${c.comment}<br />
+              <span class="reaction-button" onclick="react('${s.id}', ${i}, '❤️')">❤️ ${c.reactions['❤️']}</span>
+              <span class="reaction-button" onclick="react('${s.id}', ${i}, '🔥')">🔥 ${c.reactions['🔥']}</span>
+              <span class="reaction-button" onclick="react('${s.id}', ${i}, '😮')">😮 ${c.reactions['😮']}</span>
+            </div>
+          `).join('')}
+        </div>
+        <input id="c-${s.id}" placeholder="Comment..." />
+        <button onclick="comment('${s.id}')">Reply</button>
+      </div>`;
+    }
+
+    fetchStories();
+    getFeatured();
+  </script>
+</body>
+</html>
