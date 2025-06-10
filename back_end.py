@@ -1,5 +1,3 @@
-if __name__ == '__main__':
-    app.run(debug=True)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
@@ -121,5 +119,3 @@ def get_featured_story():
 # Run the app in debug mode (auto reloads on code changes)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
-
-
